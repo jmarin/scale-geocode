@@ -11,6 +11,7 @@ libraryDependencies ++= {
   Seq(
     "com.typesafe.akka" %% "akka-actor" % akka,
     "scale" %% "scale-core" % scale,
+    "scale" %% "scale-serialization" % scale,
     "com.typesafe.akka" %% "akka-testkit" % akka % "test",
     "org.specs2" %% "specs2" % specs2 % "test"
   )
