@@ -1,4 +1,4 @@
-scale-geocoder
-==============
+scale-geocode
+=============
 
 Geocoding at scale
