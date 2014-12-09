@@ -1,4 +1,4 @@
-package actors
+package core
 
 import akka.actor.{ Props, Actor, ActorLogging }
 import geometry._
