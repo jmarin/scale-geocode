@@ -23,7 +23,7 @@ class AddressSearch(host: String, port: Int) extends Actor with ActorLogging {
 
       implicit val ec = context.dispatcher
 
-      val q = search in s"${index}/${collection}" query queryString limit 5
+      val q = search in s"${index}/${collection}" query matchPhrase("ADDRESS", queryString) limit 5
 
       //val q = search in "address" -> "point" query "OK"
 
