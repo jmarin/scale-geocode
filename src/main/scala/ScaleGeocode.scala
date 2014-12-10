@@ -12,7 +12,7 @@ object ScaleGeocode extends GeocodeApi {
     println("ScaleGeocode started")
     implicit val system = ActorSystem("scale-geocode")
 
-    val addressSearch = system.actorOf(AddressSearch.props("192.168.59.103", 9200))
+    val addressSearch = system.actorOf(AddressSearch.props("192.168.59.103", 9300))
 
     val geocodeService = system.actorOf(
       GeocodeService.props(geocodeRoute(addressSearch)))

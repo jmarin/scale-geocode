@@ -19,14 +19,23 @@ class AddressSearch(host: String, port: Int) extends Actor with ActorLogging {
   def receive: Receive = {
     case Query(index, collection, queryString) =>
 
+      println(queryString)
+
       implicit val ec = context.dispatcher
 
+      val q = search in s"${index}/${collection}" query queryString limit 5
+
+      //val q = search in "address" -> "point" query "OK"
+
       val f = client.execute {
-        search in s"${index}/${collection}" query queryString
+        q
       }
+
+      val origSender = sender()
+
       f.onComplete {
-        case Success(r) => sender() ! r
-        case Failure(_) => sender() ! "Search Failed"
+        case Success(r) => origSender ! r.toString
+        case Failure(_) => origSender ! "Search Failed"
       }
 
   }
