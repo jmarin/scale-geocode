@@ -1,6 +1,6 @@
 package api
 
-import akka.actor.ActorRef
+import akka.actor.{ ActorRef, ActorSystem }
 import akka.pattern.ask
 import akka.util.Timeout
 import scala.concurrent.duration._
@@ -11,14 +11,19 @@ trait GeocodeApi extends Directives {
 
   implicit val timeout = Timeout(10 seconds)
 
-  def geocodeRoute(addressSearch: ActorRef): Route =
-    path("test") {
-      get {
-        complete {
-          "OK"
-        }
-      }
+  def geocodeRoute(addressSearch: ActorRef)(implicit system: ActorSystem): Route = {
+    path("") {
+      getFromResource("web/index.html")
+    } ~ {
+      getFromResourceDirectory("web")
     } ~
+      path("test") {
+        get {
+          complete {
+            "OK"
+          }
+        }
+      } ~
       path("geocode" / "point" / "suggest") {
         import core.AddressSearch._
         parameter('queryString.as[String]) { queryString =>
@@ -32,5 +37,6 @@ trait GeocodeApi extends Directives {
           }
         }
       }
+  }
 
 }
