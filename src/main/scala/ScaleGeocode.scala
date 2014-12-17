@@ -5,14 +5,18 @@ import api._
 import spray.can.Http
 import akka.io.IO
 import core._
+import com.typesafe.config.ConfigFactory
 
 object ScaleGeocode extends GeocodeApi {
 
   def main(args: Array[String]): Unit = {
     println("ScaleGeocode started")
     implicit val system = ActorSystem("scale-geocode")
+    val config = ConfigFactory.load()
+    val host = config.getString("elasticsearch.host")
+    val port = config.getInt("elasticsearch.port")
 
-    val addressSearch = system.actorOf(AddressSearch.props("192.168.59.103", 9300))
+    val addressSearch = system.actorOf(AddressSearch.props(host, port))
 
     val geocodeService = system.actorOf(
       GeocodeService.props(geocodeRoute(addressSearch)))

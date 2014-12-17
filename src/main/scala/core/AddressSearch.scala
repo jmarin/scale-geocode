@@ -4,6 +4,7 @@ import scala.util.{ Success, Failure }
 import akka.actor.{ Props, Actor, ActorLogging }
 import com.sksamuel.elastic4s.ElasticClient
 import com.sksamuel.elastic4s.ElasticDsl._
+import model.AddressJsonProtocol._
 
 object AddressSearch {
   def props(host: String, port: Int) =
@@ -34,7 +35,9 @@ class AddressSearch(host: String, port: Int) extends Actor with ActorLogging {
       val origSender = sender()
 
       f.onComplete {
-        case Success(r) => origSender ! r.toString
+        case Success(r) => {
+          origSender ! r.toString
+        }
         case Failure(_) => origSender ! "Search Failed"
       }
 

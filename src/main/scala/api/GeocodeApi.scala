@@ -6,6 +6,7 @@ import akka.util.Timeout
 import scala.concurrent.duration._
 import spray.routing.{ Directives, Route }
 import scala.concurrent.ExecutionContext.Implicits.global
+import spray.json._
 
 trait GeocodeApi extends Directives {
 
@@ -24,12 +25,12 @@ trait GeocodeApi extends Directives {
           }
         }
       } ~
-      path("geocode" / "point" / "suggest") {
+      path("address" / "point" / "suggest") {
         import core.AddressSearch._
-        parameter('queryString.as[String]) { queryString =>
+        parameter('term.as[String]) { term =>
           get {
             complete {
-              (addressSearch ? Query("address", "point", queryString)).collect {
+              (addressSearch ? Query("address", "point", term)).collect {
                 case s: String => s
                 case _ => "Failure"
               }
@@ -37,6 +38,7 @@ trait GeocodeApi extends Directives {
           }
         }
       }
+
   }
 
 }
