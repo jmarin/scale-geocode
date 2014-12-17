@@ -11,3 +11,8 @@
     border-radius:0;
     font-weight: normal;
 }
+
+#map {
+  height: 400px;
+  width: 60%;
+}

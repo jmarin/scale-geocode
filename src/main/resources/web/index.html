@@ -1,9 +1,11 @@
 <html>
 <head>
   <link rel="stylesheet" href="//code.jquery.com/ui/1.11.2/themes/smoothness/jquery-ui.css">
+  <link rel="stylesheet" href="http://cdn.leafletjs.com/leaflet-0.7.3/leaflet.css" />
   <link rel="stylesheet" href="css/main.css">
   <script src="//code.jquery.com/jquery-1.10.2.js"></script>
   <script src="//code.jquery.com/ui/1.11.2/jquery-ui.js"></script>
+  <script src="http://cdn.leafletjs.com/leaflet-0.7.3/leaflet.js"></script>
   <script src="js/suggestAddress.js"></script>
   <style>
     /* autocomplete adds the ui-autocomplete-loading class to the textbox when it is _busy_ */
@@ -16,13 +18,14 @@
 </head>
 
 <body>
-  <h1>Grasshopper Proof of Concept</h1>
+  <h1>Geocoder Proof of Concept</h1>
   <p>
     <div>
       <label for="address">Address: </label>
-      <input id="address">
+      <input id="address" style="width:50%;">
     </div>
 	</p>
+   <div id="map"></div>
 </body>
 
 </html>
