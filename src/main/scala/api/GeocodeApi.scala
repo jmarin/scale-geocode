@@ -30,7 +30,7 @@ trait GeocodeApi extends Directives {
       } ~
       path("address" / "point" / "suggest") {
         import core.AddressSearch._
-        parameter('term.as[String]) { term =>
+        parameter('queryString.as[String]) { term =>
           get {
             complete {
               (addressSearch ? Query("address", "point", term)).collect {

@@ -1,16 +1,29 @@
  $(function() {
+   function log(message) {
+     console.log(message);
+   }
 
-	 function log(message) {
-	   console.log(message);
-	 }
+   var url = "/address/point/suggest";
 
    $("#address").autocomplete({
-	   source: "/address/point/suggest" + $("#address").val(),
-		 minLength: 3,
-		 delay: 300,
-	   select: function(event, ui) {
-		   log(ui.item)
-		 }
-	 });
+     source: function(request, response) {
+       $.getJSON(url, {
+         queryString: request.term
+       }, function(data) {
+         var array = data.error ? [] : $.map(data, function(item){
+           return {
+             label: item.properties.ADDRESS,
+             feature: item
+           };
+         });
+         response(array);
+       });
+     },
+     minLength: 3,
+     delay: 300,
+     select: function(event, ui) {
+       log(ui.item)
+     }
+   });
  });
 
