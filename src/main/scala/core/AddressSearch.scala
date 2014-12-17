@@ -1,10 +1,15 @@
 package core
 
+import geojson.FeatureJsonProtocol.FeatureFormat
+import model.AddressSearchResult
+
 import scala.util.{ Success, Failure }
 import akka.actor.{ Props, Actor, ActorLogging }
 import com.sksamuel.elastic4s.ElasticClient
 import com.sksamuel.elastic4s.ElasticDsl._
 import model.AddressJsonProtocol._
+import spray.json._
+import DefaultJsonProtocol._
 
 object AddressSearch {
   def props(host: String, port: Int) =
@@ -20,7 +25,7 @@ class AddressSearch(host: String, port: Int) extends Actor with ActorLogging {
   def receive: Receive = {
     case Query(index, collection, queryString) =>
 
-      println(queryString)
+      //println(queryString)
 
       implicit val ec = context.dispatcher
 
@@ -36,7 +41,11 @@ class AddressSearch(host: String, port: Int) extends Actor with ActorLogging {
 
       f.onComplete {
         case Success(r) => {
-          origSender ! r.toString
+          val jsonAst = r.toString.parseJson
+          val results = jsonAst.convertTo[AddressSearchResult]
+          val hits = results.hits
+          val features = hits.hits.map(hit => hit._source)
+          origSender ! "[" + features.map(f => FeatureFormat.write(f)).mkString(",") + "]"
         }
         case Failure(_) => origSender ! "Search Failed"
       }

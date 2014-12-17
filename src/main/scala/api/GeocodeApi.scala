@@ -3,6 +3,9 @@ package api
 import akka.actor.{ ActorRef, ActorSystem }
 import akka.pattern.ask
 import akka.util.Timeout
+import feature.Feature
+import geojson.FeatureJsonProtocol.FeatureFormat
+import model.{ TotalHits, Hits, AddressSearchResult }
 import scala.concurrent.duration._
 import spray.routing.{ Directives, Route }
 import scala.concurrent.ExecutionContext.Implicits.global

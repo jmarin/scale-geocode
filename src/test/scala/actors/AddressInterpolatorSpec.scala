@@ -1,5 +1,6 @@
 package actors
 
+import core.AddressInterpolator
 import org.specs2.mutable._
 import akka.actor.Props
 import scala.concurrent.duration._
