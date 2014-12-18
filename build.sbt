@@ -4,8 +4,11 @@ version := "0.0.1"
 
 scalaVersion := "2.11.4"
 
+javaOptions += "-Xmx4G"
+
 libraryDependencies ++= {
   val akka = "2.3.7"
+  val akkaStreams = "1.0-M1"
   val spray = "1.3.2"
   val sprayJson = "1.3.1"
   val elastic4s = "1.4.0"
@@ -13,6 +16,7 @@ libraryDependencies ++= {
   val specs2 = "2.4.2"
   Seq(
     "com.typesafe.akka" %% "akka-actor" % akka,
+    "com.typesafe.akka" %% "akka-stream-experimental" % akkaStreams,
     "io.spray" %% "spray-can" % spray,
     "io.spray" %% "spray-routing" % spray,
     "io.spray" %%  "spray-json" % sprayJson,
