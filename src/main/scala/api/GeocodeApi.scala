@@ -3,7 +3,7 @@ package api
 import akka.actor.{ ActorRef, ActorSystem }
 import akka.pattern.ask
 import akka.util.Timeout
-import feature.Feature
+import feature.{ Feature, FeatureCollection }
 import geojson.FeatureJsonProtocol.FeatureFormat
 import model.{ TotalHits, Hits, AddressSearchResult, AddressInput, AddressOutput }
 import scala.concurrent.duration._
@@ -37,9 +37,16 @@ trait GeocodeApi extends Directives {
             import model.AddressJsonProtocol._
             entity(as[String]) { data =>
               val inputAddresses = data.parseJson.convertTo[List[AddressInput]]
-              println(inputAddresses)
+              addressSearch ! inputAddresses
               complete {
-                "Batch geocode"
+                (addressSearch ? inputAddresses).collect {
+                  case features: List[Feature] =>
+                    import geojson.FeatureJsonProtocol._
+                    println(features)
+                    FeatureCollectionFormat.write(FeatureCollection(features)).toString
+                  case s: String => s
+                  case _ => "Failure"
+                }
               }
             }
           }

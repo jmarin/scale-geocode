@@ -1,9 +1,12 @@
 package core
 
-import geojson.FeatureJsonProtocol.FeatureFormat
-import model.AddressSearchResult
-
+import geometry._
+import feature._
+import geojson.FeatureJsonProtocol.{ FeatureFormat, FeatureCollectionFormat }
+import model.{ AddressSearchResult, AddressInput, AddressOutput }
 import scala.util.{ Success, Failure }
+import akka.pattern.ask
+import akka.util.Timeout
 import akka.actor.{ Props, Actor, ActorLogging }
 import com.sksamuel.elastic4s.ElasticClient
 import com.sksamuel.elastic4s.ElasticDsl._
@@ -25,13 +28,9 @@ class AddressSearch(host: String, port: Int) extends Actor with ActorLogging {
   def receive: Receive = {
     case Query(index, collection, queryString) =>
 
-      //println(queryString)
-
       implicit val ec = context.dispatcher
 
       val q = search in s"${index}/${collection}" query matchPhrase("ADDRESS", queryString) limit 5
-
-      //val q = search in "address" -> "point" query "OK"
 
       val f = client.execute {
         q
@@ -49,6 +48,23 @@ class AddressSearch(host: String, port: Int) extends Actor with ActorLogging {
         }
         case Failure(_) => origSender ! "Search Failed"
       }
+
+    case inputAddresses: List[AddressInput] =>
+      val origSender = sender()
+      val point = Point(-77, 38)
+      val f = Feature(point)
+      val output = inputAddresses.map { input =>
+        val id = Field("id", IntType())
+        val address = Field("address", StringType())
+        val schema = Schema(id, address)
+        val values = Map("geometry" -> point, "id" -> input.id, "address" -> input.address)
+        //val geoJson = (origSender ? Query("address", "point", input.address)).await
+        //val fc = FeatureCollectionFormat.read(geoJson)
+        //val f = fc.features.head
+        f
+      }
+
+      origSender ! output
 
   }
 
