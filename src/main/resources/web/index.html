@@ -23,6 +23,12 @@
     <div>
       <label for="address">Address: </label>
       <input id="address" style="width:50%;">
+		</div>
+		</div>
+			<form action="/address/point" method="post" enctype="multipart/form-data">
+			  <input type="file" name="geocode">				
+				<input type="submit" value="Geocode">
+			</form>
     </div>
 	</p>
    <div id="map"></div>

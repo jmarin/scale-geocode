@@ -11,5 +11,7 @@ object AddressJsonProtocol extends DefaultJsonProtocol with NullOptions {
   implicit val hitsFormat = jsonFormat5(Hits)
   implicit val totalHitsFormat = jsonFormat3(TotalHits)
   implicit val addressSearchResultFormat = jsonFormat4(AddressSearchResult)
+  implicit val addressInputFormat = jsonFormat2(AddressInput)
+  implicit val addressOutputFormat = jsonFormat1(AddressOutput)
 }
 

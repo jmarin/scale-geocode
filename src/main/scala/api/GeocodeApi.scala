@@ -5,12 +5,14 @@ import akka.pattern.ask
 import akka.util.Timeout
 import feature.Feature
 import geojson.FeatureJsonProtocol.FeatureFormat
-import model.{ TotalHits, Hits, AddressSearchResult }
+import model.{ TotalHits, Hits, AddressSearchResult, AddressInput, AddressOutput }
 import scala.concurrent.duration._
 import spray.routing.{ Directives, Route }
 import scala.concurrent.ExecutionContext.Implicits.global
 import spray.json._
 import spray.http.MediaTypes._
+import spray.http.BodyPart
+import spray.http.MultipartFormData
 
 trait GeocodeApi extends Directives {
 
@@ -31,8 +33,15 @@ trait GeocodeApi extends Directives {
       } ~
       path("address" / "point") {
         post {
-          complete {
-            "Batch Geocoding"
+          respondWithMediaType(`application/json`) {
+            import model.AddressJsonProtocol._
+            entity(as[String]) { data =>
+              val inputAddresses = data.parseJson.convertTo[List[AddressInput]]
+              println(inputAddresses)
+              complete {
+                "Batch geocode"
+              }
+            }
           }
         }
       } ~

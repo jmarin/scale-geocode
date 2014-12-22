@@ -8,3 +8,5 @@ case class AddressProperties(ID: Int, CNTY_NAME: String, DATE_ED: String, ADDRES
 case class Hits(_index: String, _type: String, _id: String, _score: Double, _source: Feature)
 case class TotalHits(total: Int, max_score: Double, hits: Array[Hits])
 case class AddressSearchResult(took: Int, timed_out: Boolean, _shards: Shard, hits: TotalHits)
+case class AddressInput(id: Int, address: String)
+case class AddressOutput(f: Feature)
