@@ -16,7 +16,7 @@ object ScaleGeocode extends GeocodeApi {
     val host = config.getString("elasticsearch.host")
     val port = config.getInt("elasticsearch.port")
 
-    val addressSearch = system.actorOf(AddressSearch.props(host, port))
+    val addressSearch = system.actorOf(AddressSearch.props(host, port), "address-search")
 
     val geocodeService = system.actorOf(
       GeocodeService.props(geocodeRoute(addressSearch)))

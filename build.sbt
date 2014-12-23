@@ -7,6 +7,7 @@ scalaVersion := "2.11.4"
 javaOptions += "-Xmx4G"
 
 libraryDependencies ++= {
+  val parserCombinators = "1.0.2"
   val akka = "2.3.7"
   val akkaStreams = "1.0-M1"
   val spray = "1.3.2"
@@ -15,6 +16,7 @@ libraryDependencies ++= {
   val scale = "0.0.1-SNAPSHOT"
   val specs2 = "2.4.2"
   Seq(
+    "org.scala-lang.modules" %% "scala-parser-combinators" % parserCombinators,
     "com.typesafe.akka" %% "akka-actor" % akka,
     "com.typesafe.akka" %% "akka-stream-experimental" % akkaStreams,
     "io.spray" %% "spray-can" % spray,

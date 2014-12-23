@@ -68,6 +68,20 @@ trait GeocodeApi extends Directives {
             }
           }
         }
+      } ~
+      path("address" / "line") {
+        post {
+          respondWithMediaType(`application/json`) {
+            import model.AddressJsonProtocol._
+            entity(as[String]) { data =>
+              val inputAddresses = data.parseJson.convertTo[List[AddressInput]]
+
+              complete {
+                "Line geocode"
+              }
+            }
+          }
+        }
       }
 
   }

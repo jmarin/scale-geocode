@@ -18,10 +18,13 @@ object AddressSearch {
   def props(host: String, port: Int) =
     Props(new AddressSearch(host, port))
   case class Query(index: String, collection: String, queryString: String)
+  case class LineQuery(index: String, collection: String, number: Int, address: String, zipCode: String, state: String)
 }
 
 class AddressSearch(host: String, port: Int) extends Actor with ActorLogging {
   import AddressSearch._
+
+  val interpolator = context.actorOf(Props[AddressInterpolator], "interpolator")
 
   val client = ElasticClient.remote(host, port)
 
@@ -65,6 +68,15 @@ class AddressSearch(host: String, port: Int) extends Actor with ActorLogging {
       }
 
       origSender ! output
+    case LineQuery(index, collection, number, address, zipCode, state) =>
+      implicit val ec = context.dispatcher
+
+      val point = Point(-77, 38)
+      val f = Feature(point)
+
+      sender() ! f
+
+    //val q = search in s"${index}/${collection}" query
 
   }
 
