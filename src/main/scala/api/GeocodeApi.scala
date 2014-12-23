@@ -74,10 +74,11 @@ trait GeocodeApi extends Directives {
           respondWithMediaType(`application/json`) {
             import model.AddressJsonProtocol._
             entity(as[String]) { data =>
-              val inputAddresses = data.parseJson.convertTo[List[AddressInput]]
-
-              complete {
-                "Line geocode"
+              val inputAddress = data.parseJson.convertTo[AddressInput]
+              val response = (addressSearch ? inputAddress).mapTo[Feature]
+              onSuccess(response) {
+                case (feature) =>
+                  complete(FeatureFormat.write(feature).toString)
               }
             }
           }

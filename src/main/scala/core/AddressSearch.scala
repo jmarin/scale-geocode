@@ -68,16 +68,9 @@ class AddressSearch(host: String, port: Int) extends Actor with ActorLogging {
       }
 
       origSender ! output
-    case LineQuery(index, collection, number, address, zipCode, state) =>
-      implicit val ec = context.dispatcher
 
-      val point = Point(-77, 38)
-      val f = Feature(point)
-
-      sender() ! f
-
-    //val q = search in s"${index}/${collection}" query
-
+    case address: AddressInput =>
+      sender() ! Geocoder.geocode(address)
   }
 
 }
