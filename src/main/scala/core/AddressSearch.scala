@@ -8,46 +8,95 @@ import scala.util.{ Success, Failure }
 import akka.pattern.ask
 import akka.util.Timeout
 import akka.actor.{ Props, Actor, ActorLogging }
-import com.sksamuel.elastic4s.ElasticClient
-import com.sksamuel.elastic4s.ElasticDsl._
+import org.elasticsearch.client.Client
 import model.AddressJsonProtocol._
+import parser.AddressParser
 import spray.json._
 import DefaultJsonProtocol._
+import org.elasticsearch.action.search.SearchResponse
+import org.elasticsearch.action.search.SearchType
+import org.elasticsearch.index.query.FilterBuilders
+import org.elasticsearch.index.query.FilterBuilders._
+import org.elasticsearch.index.query.QueryBuilders
+import org.elasticsearch.index.query.QueryBuilders._
+import scala.collection.JavaConversions._
+import geojson.FeatureJsonProtocol._
 
 object AddressSearch {
-  def props(host: String, port: Int) =
-    Props(new AddressSearch(host, port))
-  case class Query(index: String, collection: String, queryString: String)
+  def props(client: Client) =
+    Props(new AddressSearch(client))
+  case class Suggest(index: String, collection: String, queryString: String)
+  case class LineQuery(index: String, collection: String, address: String)
 }
 
-class AddressSearch(host: String, port: Int) extends Actor with ActorLogging {
+class AddressSearch(client: Client) extends Actor with ActorLogging {
   import AddressSearch._
 
-  val client = ElasticClient.remote(host, port)
-
   def receive: Receive = {
-    case Query(index, collection, queryString) =>
+    case Suggest(index, collection, queryString) =>
+      val response = client.prepareSearch(index)
+        .setTypes(collection)
+        .setSearchType(SearchType.DFS_QUERY_THEN_FETCH)
+        .setQuery(QueryBuilders.matchPhraseQuery("ADDRESS", queryString))
+        .execute
+        .actionGet
 
-      implicit val ec = context.dispatcher
+      val hits = response.getHits().getHits
+      val features = hits.map(hit => hit.getSourceAsString).take(5)
+      sender() ! "[" + features.mkString(",") + "]"
 
-      val q = search in s"${index}/${collection}" query matchPhrase("ADDRESS", queryString) limit 5
+    case LineQuery(index, collection, queryString) =>
 
-      val f = client.execute {
-        q
-      }
+      val address = AddressParser(queryString)
+      val number = address.number
+      val street = address.street
+      val zipCode = address.zipCode
+      val state = address.state
 
-      val origSender = sender()
+      val rightHouseFilter = FilterBuilders.andFilter(
+        FilterBuilders.rangeFilter("RFROMHN").lte(number),
+        FilterBuilders.rangeFilter("RTOHN").gte(number))
 
-      f.onComplete {
-        case Success(r) => {
-          val jsonAst = r.toString.parseJson
-          val results = jsonAst.convertTo[AddressSearchResult]
-          val hits = results.hits
-          val features = hits.hits.map(hit => hit._source)
-          origSender ! "[" + features.map(f => FeatureFormat.write(f)).mkString(",") + "]"
-        }
-        case Failure(_) => origSender ! "Search Failed"
-      }
+      val leftHouseFilter = FilterBuilders.andFilter(
+        FilterBuilders.rangeFilter("LFROMHN").lte(number),
+        FilterBuilders.rangeFilter("LTOHN").gte(number))
+
+      val houseFilter = FilterBuilders.orFilter(rightHouseFilter, leftHouseFilter)
+
+      val zipLeftFilter = FilterBuilders.termFilter("ZIPL", zipCode)
+      val zipRightFilter = FilterBuilders.termFilter("ZIPR", zipCode)
+      val zipFilter = FilterBuilders.orFilter(zipLeftFilter, zipRightFilter)
+      val filter = FilterBuilders.andFilter(houseFilter, zipFilter)
+
+      val stateQuery = QueryBuilders.matchQuery("STATE", state)
+      val streetQuery = QueryBuilders.matchPhraseQuery("FULLNAME", street)
+      val boolQuery = QueryBuilders
+        .boolQuery()
+        .must(stateQuery)
+        .must(streetQuery)
+
+      val q = QueryBuilders.filteredQuery(boolQuery, filter)
+
+      //println(q)
+
+      val response = client.prepareSearch(index)
+        .setTypes(collection)
+        .setSearchType(SearchType.DFS_QUERY_THEN_FETCH)
+        .setQuery(q)
+        .execute
+        .actionGet
+
+      val hits = response.getHits().getHits
+      val feature = FeatureFormat.read(hits(0).getSourceAsString.parseJson)
+      val addressRange = AddressInterpolator.calculateAddressRange(feature, number)
+      val point = AddressInterpolator.interpolate(feature, addressRange, number)
+      val geoJson = point.toJson.toString
+      println(geoJson)
+      sender() ! geoJson
+    //val features = hits.map(hit => hit.getSourceAsString).take(1)
+    //sender() ! "[" + features.mkString(",") + "]"
+
+    //sender() ! "geocode"
 
     case inputAddresses: List[AddressInput] =>
       val origSender = sender()
