@@ -1,5 +1,6 @@
 package api
 
+import scala.util.{ Success, Failure }
 import akka.actor.{ ActorRef, ActorSystem }
 import akka.pattern.ask
 import akka.util.Timeout
@@ -40,12 +41,9 @@ trait GeocodeApi extends Directives {
               import core.AddressQuery.LineQuery
               entity(as[String]) { json =>
                 val inputAddress = json.parseJson.convertTo[AddressInput]
-                complete {
-                  (addressSearch ? LineQuery("address", "line", inputAddress.address)).collect {
-                    case s: String => s
-                    case _ => "Failure"
-                  }
-
+                onComplete((addressSearch ? LineQuery("address", "line", inputAddress.address)).mapTo[Feature]) {
+                  case Success(f) => complete(f.toJson.toString)
+                  case Failure(_) => complete("Failure")
                 }
               }
             }

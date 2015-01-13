@@ -7,6 +7,8 @@ import model.{ AddressSearchResult, AddressInput, AddressOutput }
 import scala.util.{ Success, Failure }
 import akka.pattern.ask
 import akka.util.Timeout
+import scala.concurrent.duration._
+import scala.concurrent.ExecutionContext.Implicits.global
 import akka.actor.{ Props, Actor, ActorLogging }
 import org.elasticsearch.client.Client
 import model.AddressJsonProtocol._
@@ -24,17 +26,23 @@ import geojson.FeatureJsonProtocol._
 
 object AddressQuery {
   def props(client: Client) =
-    Props(new AddressQuery(client))
+    Props(new AddressQuery(client)(Timeout(1 seconds)))
   case class PointQuery(index: String, collection: String, address: String, maxFeatures: Int)
   case class LineQuery(index: String, collection: String, address: String)
   case class Geocode(index: String, collection: String, address: String)
 }
 
-class AddressQuery(client: Client) extends Actor with ActorLogging {
+class AddressQuery(client: Client)(implicit val timeout: Timeout) extends Actor with ActorLogging {
   import AddressQuery._
 
   def receive: Receive = {
     case Geocode(index, collection, address) =>
+      val fp = self ? PointQuery(index, collection, address, 1)
+      val fl = self ? LineQuery(index, collection, address)
+      for {
+        p <- fp
+        l <- fl
+      } yield (fp, fl)
 
     case PointQuery(index, collection, queryString, maxFeatures) =>
       val features = searchPoint(client, index, collection, queryString).take(maxFeatures)
@@ -48,7 +56,6 @@ class AddressQuery(client: Client) extends Actor with ActorLogging {
       }
 
     case LineQuery(index, collection, queryString) =>
-
       val address = AddressParser(queryString)
       val number = address.number
       val street = address.street
@@ -90,8 +97,7 @@ class AddressQuery(client: Client) extends Actor with ActorLogging {
       val feature = FeatureFormat.read(hits(0).getSourceAsString.parseJson)
       val addressRange = AddressInterpolator.calculateAddressRange(feature, number)
       val point = AddressInterpolator.interpolate(feature, addressRange, number)
-      val geoJson = point.toJson.toString
-      sender() ! geoJson
+      sender() ! point
 
     case inputAddresses: List[AddressInput] =>
       val origSender = sender()
@@ -121,6 +127,7 @@ class AddressQuery(client: Client) extends Actor with ActorLogging {
       .actionGet
 
     val hits = response.getHits().getHits
+    println(hits)
     hits.map(hit => hit.getSourceAsString.parseJson.convertTo[Feature])
   }
 
