@@ -13,6 +13,7 @@ import spray.json._
 import spray.http.MediaTypes._
 import spray.http.BodyPart
 import spray.http.MultipartFormData
+import core.AddressQuery._
 
 trait GeocodeApi extends Directives {
 
@@ -52,34 +53,12 @@ trait GeocodeApi extends Directives {
         }
       } ~
       path("address" / "point") {
-        post {
-          respondWithMediaType(`application/json`) {
-            import model.AddressJsonProtocol._
-            entity(as[String]) { data =>
-              val inputAddresses = data.parseJson.convertTo[List[AddressInput]]
-              addressSearch ! inputAddresses
-              complete {
-                (addressSearch ? inputAddresses).collect {
-                  case features: List[Feature] =>
-                    import geojson.FeatureJsonProtocol._
-                    println(features)
-                    FeatureCollectionFormat.write(FeatureCollection(features)).toString
-                  case s: String => s
-                  case _ => "Failure"
-                }
-              }
-            }
-          }
-        }
-      } ~
-      path("address" / "point" / "suggest") {
-        import core.AddressQuery._
-        parameter('queryString.as[String]) { term =>
+        parameter('queryString.as[String], 'maxFeatures.as[Int] ? 1) { (term, maxFeatures) =>
           get {
             respondWithMediaType(`application/json`) {
               compressResponseIfRequested() {
                 complete {
-                  (addressSearch ? Suggest("address", "point", term)).collect {
+                  (addressSearch ? PointQuery("address", "point", term, maxFeatures)).collect {
                     case s: String => s
                     case _ => "Failure"
                   }

@@ -25,25 +25,27 @@ import geojson.FeatureJsonProtocol._
 object AddressQuery {
   def props(client: Client) =
     Props(new AddressQuery(client))
-  case class Suggest(index: String, collection: String, queryString: String)
+  case class PointQuery(index: String, collection: String, address: String, maxFeatures: Int)
   case class LineQuery(index: String, collection: String, address: String)
+  case class Geocode(index: String, collection: String, address: String)
 }
 
 class AddressQuery(client: Client) extends Actor with ActorLogging {
   import AddressQuery._
 
   def receive: Receive = {
-    case Suggest(index, collection, queryString) =>
-      val response = client.prepareSearch(index)
-        .setTypes(collection)
-        .setSearchType(SearchType.DFS_QUERY_THEN_FETCH)
-        .setQuery(QueryBuilders.matchPhraseQuery("ADDRESS", queryString))
-        .execute
-        .actionGet
+    case Geocode(index, collection, address) =>
 
-      val hits = response.getHits().getHits
-      val features = hits.map(hit => hit.getSourceAsString).take(5)
-      sender() ! "[" + features.mkString(",") + "]"
+    case PointQuery(index, collection, queryString, maxFeatures) =>
+      val features = searchPoint(client, index, collection, queryString).take(maxFeatures)
+      val geoJson = features.map { f =>
+        f.toJson.toString
+      }
+      if (features.size > 1) {
+        sender() ! "[" + geoJson.mkString(",") + "]"
+      } else {
+        sender() ! geoJson
+      }
 
     case LineQuery(index, collection, queryString) =>
 
@@ -89,7 +91,6 @@ class AddressQuery(client: Client) extends Actor with ActorLogging {
       val addressRange = AddressInterpolator.calculateAddressRange(feature, number)
       val point = AddressInterpolator.interpolate(feature, addressRange, number)
       val geoJson = point.toJson.toString
-      println(geoJson)
       sender() ! geoJson
 
     case inputAddresses: List[AddressInput] =>
@@ -109,6 +110,18 @@ class AddressQuery(client: Client) extends Actor with ActorLogging {
 
       origSender ! output
 
+  }
+
+  def searchPoint(client: Client, index: String, collection: String, queryString: String): Array[Feature] = {
+    val response = client.prepareSearch(index)
+      .setTypes(collection)
+      .setSearchType(SearchType.DFS_QUERY_THEN_FETCH)
+      .setQuery(QueryBuilders.matchPhraseQuery("ADDRESS", queryString))
+      .execute
+      .actionGet
+
+    val hits = response.getHits().getHits
+    hits.map(hit => hit.getSourceAsString.parseJson.convertTo[Feature])
   }
 
 }

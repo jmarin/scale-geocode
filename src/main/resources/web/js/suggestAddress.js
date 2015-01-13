@@ -13,12 +13,13 @@
      console.log(message);
    }
 
-   var url = "/address/point/suggest";
+   var url = "/address/point";
 
    $("#address").autocomplete({
      source: function(request, response) {
        $.getJSON(url, {
-         queryString: request.term
+         queryString: request.term,
+				 maxFeatures: 5
        }, function(data) {
          var array = data.error ? [] : $.map(data, function(item){
            return {
