@@ -22,7 +22,7 @@ object ScaleGeocode extends GeocodeApi {
     val port = config.getInt("elasticsearch.port")
     val client = new TransportClient().addTransportAddress(new InetSocketTransportAddress(host, port))
 
-    val addressSearch = system.actorOf(AddressSearch.props(client))
+    val addressSearch = system.actorOf(AddressQuery.props(client))
 
     val geocodeService = system.actorOf(
       GeocodeService.props(geocodeRoute(addressSearch)))

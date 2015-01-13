@@ -22,15 +22,15 @@ import org.elasticsearch.index.query.QueryBuilders._
 import scala.collection.JavaConversions._
 import geojson.FeatureJsonProtocol._
 
-object AddressSearch {
+object AddressQuery {
   def props(client: Client) =
-    Props(new AddressSearch(client))
+    Props(new AddressQuery(client))
   case class Suggest(index: String, collection: String, queryString: String)
   case class LineQuery(index: String, collection: String, address: String)
 }
 
-class AddressSearch(client: Client) extends Actor with ActorLogging {
-  import AddressSearch._
+class AddressQuery(client: Client) extends Actor with ActorLogging {
+  import AddressQuery._
 
   def receive: Receive = {
     case Suggest(index, collection, queryString) =>
@@ -77,8 +77,6 @@ class AddressSearch(client: Client) extends Actor with ActorLogging {
 
       val q = QueryBuilders.filteredQuery(boolQuery, filter)
 
-      //println(q)
-
       val response = client.prepareSearch(index)
         .setTypes(collection)
         .setSearchType(SearchType.DFS_QUERY_THEN_FETCH)
@@ -93,10 +91,6 @@ class AddressSearch(client: Client) extends Actor with ActorLogging {
       val geoJson = point.toJson.toString
       println(geoJson)
       sender() ! geoJson
-    //val features = hits.map(hit => hit.getSourceAsString).take(1)
-    //sender() ! "[" + features.mkString(",") + "]"
-
-    //sender() ! "geocode"
 
     case inputAddresses: List[AddressInput] =>
       val origSender = sender()

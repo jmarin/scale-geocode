@@ -36,7 +36,7 @@ trait GeocodeApi extends Directives {
           respondWithMediaType(`application/json`) {
             compressResponseIfRequested() {
               import model.AddressJsonProtocol._
-              import core.AddressSearch.LineQuery
+              import core.AddressQuery.LineQuery
               entity(as[String]) { json =>
                 val inputAddress = json.parseJson.convertTo[AddressInput]
                 complete {
@@ -73,7 +73,7 @@ trait GeocodeApi extends Directives {
         }
       } ~
       path("address" / "point" / "suggest") {
-        import core.AddressSearch._
+        import core.AddressQuery._
         parameter('queryString.as[String]) { term =>
           get {
             respondWithMediaType(`application/json`) {
@@ -84,6 +84,20 @@ trait GeocodeApi extends Directives {
                     case _ => "Failure"
                   }
                 }
+              }
+            }
+          }
+        }
+      } ~
+      pathPrefix("api") {
+        path("geocode") {
+          import model.AddressJsonProtocol._
+          import core.AddressQuery._
+          post {
+            entity(as[String]) { data =>
+              val inputAddresse = data.parseJson.convertTo[AddressInput]
+              complete {
+                "geocode"
               }
             }
           }
